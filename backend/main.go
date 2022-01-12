@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"github.com/vaishnavnamboodirim/student-app-api/backend/models"
+	"github.com/rs/cors"
 )
 
 var collection = helper.ConnectDB()
@@ -64,7 +65,7 @@ func getStudent(w http.ResponseWriter, r *http.Request) {
 	var params = mux.Vars(r)
 
 	// string to primitive.ObjectID
-	id, _ := primitive.ObjectIDFromHex(params["id"])
+	id, _ := primitive.ObjectIDFromHex(params["_id"])
 
 	// We create filter. If it is unnecessary to sort data for you, you can use bson.M{}
 	filter := bson.M{"_id": id}
@@ -161,11 +162,28 @@ func deleteStudent(w http.ResponseWriter, r *http.Request) {
 func main() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/api/students", getStudents).Methods("GET")
-	r.HandleFunc("/api/students/{id}", getStudent).Methods("GET")
-	r.HandleFunc("/api/students", createStudent).Methods("POST")
-	r.HandleFunc("/api/students/{id}", updateStudent).Methods("PUT")
-	r.HandleFunc("/api/students/{id}", deleteStudent).Methods("DELETE")
+	corsOpts := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+			http.MethodHead,
+		},
 
-	log.Fatal(http.ListenAndServe(":8000", r))
+		AllowedHeaders: []string{
+			"*",
+		},
+	})
+
+	r.HandleFunc("/api/students", getStudents).Methods("GET")
+	r.HandleFunc("/api/student/{_id}", getStudent).Methods("GET")
+	r.HandleFunc("/api/students", createStudent).Methods("POST")
+	r.HandleFunc("/api/students/{_id}", updateStudent).Methods("PUT")
+	r.HandleFunc("/api/students/{_id}", deleteStudent).Methods("DELETE")
+
+	log.Fatal(http.ListenAndServe(":8000", corsOpts.Handler(r)))
 }
